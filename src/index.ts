@@ -1,5 +1,3 @@
-import { TProstoCacheObject, TProstoCacheStrategy } from './types'
-
 export interface TProstoCacheOptions {
     limit?: number
     ttl?: number
@@ -11,13 +9,16 @@ export interface TProstoCacheEntry<DataType = unknown> {
 }
 
 export class ProstoCache<DataType = unknown> {
-
     protected data: Record<string, TProstoCacheEntry<DataType>> = {}
+
     protected limits: string[] = []
+
     protected expireOrder: number[] = []
+
     protected expireSeries: Record<number, string[]> = {}
 
     protected options: TProstoCacheOptions
+
     protected nextTimeout: NodeJS.Timeout | undefined
 
     constructor(options?: TProstoCacheOptions) {
