@@ -19,6 +19,16 @@ const ttlUnitsChart = {
   h: 60000 * 60,
 }
 
+/**
+ * ## ProstoCache
+ *
+ * A class that provides in-memory caching functionality.
+ * It supports features like entry and cache level time-to-live (TTL), cache size limiting, and automatic entry expiration.
+ *
+ * @example
+ * // Create a cache instance with a limit of 100 items and a default TTL of 1 hour
+ * const cache = new ProstoCache({ limit: 100, ttl: 1, ttlUnits: 'h' });
+ */
 export class ProstoCache<DataType = unknown> {
   protected data = new Map<string, TProstoCacheEntry<DataType>>() // : Record<string, TProstoCacheEntry<DataType> | undefined> = {}
 
@@ -39,6 +49,17 @@ export class ProstoCache<DataType = unknown> {
     }
   }
 
+  /**
+   * Stores a value in the cache.
+   * @param key key of the cache entry
+   * @param value value
+   * @param _ttl (optional) time-to-live on entry level
+   * @param _ttlUnits (optional) ttl units (ms, s, m, h)
+   *
+   * @example
+   * // Set a value in the cache with ttl of 10 seconds
+   * cache.set('myKey', 'myValue', 10, 's');
+   */
   // eslint-disable-next-line max-params
   public set<T = DataType>(
     key: string,
@@ -68,10 +89,24 @@ export class ProstoCache<DataType = unknown> {
     }
   }
 
+  /**
+   * Retrieves a value from the cache.
+   *
+   * @example
+   * // Retrieve a value from the cache
+   * const value = cache.get('myKey');
+   */
   public get<T = DataType>(key: string): T | undefined {
     return this.data.get(key)?.value as unknown as T | undefined
   }
 
+  /**
+   * Deletes an entry from the cache.
+   *
+   * @example
+   * // Delete a value from the cache
+   * cache.del('myKey');
+   */
   public del(key: string) {
     const entry = this.data.get(key)
     if (entry) {
@@ -100,6 +135,13 @@ export class ProstoCache<DataType = unknown> {
     }
   }
 
+  /**
+   * Clears all entries from the cache.
+   *
+   * @example
+   * // Reset the cache
+   * cache.reset();
+   */
   public reset() {
     this.data.clear()
     if (this.nextTimeout) {
