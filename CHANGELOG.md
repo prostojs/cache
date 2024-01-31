@@ -1,3 +1,12 @@
+# [0.1.0](https://github.com/prostojs/cache/compare/v0.0.1...v0.1.0) (2024-01-31)
+
+
+### Features
+
+* add ttl on entry level ([86f30f5](https://github.com/prostojs/cache/commit/86f30f5a61183c86b775b65b1aa18870fd86a348))
+
+
+
 ## 0.0.1 (2021-10-29)
 
 ### Features
