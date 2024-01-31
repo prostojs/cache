@@ -1,173 +1,174 @@
-export interface TProstoCacheOptions {
-    limit?: number
-    ttl?: number
+import { binarySearch } from './bin-serach'
+
+export interface TProstoCacheOptions<T = unknown> {
+  limit: number
+  ttl?: number
+  ttlUnits?: 'ms' | 's' | 'm' | 'h'
+  onExpire?: <TT = T>(key: string, value: TT) => unknown | Promise<unknown>
 }
 
 export interface TProstoCacheEntry<DataType = unknown> {
-    value: DataType
-    expires: number | null
+  value: DataType
+  expires: number | null
+}
+
+const ttlUnitsChart = {
+  ms: 1,
+  s: 1000,
+  m: 60000,
+  h: 60000 * 60,
 }
 
 export class ProstoCache<DataType = unknown> {
-    protected data: Record<string, TProstoCacheEntry<DataType>> = {}
+  protected data = new Map<string, TProstoCacheEntry<DataType>>() // : Record<string, TProstoCacheEntry<DataType> | undefined> = {}
 
-    protected limits: string[] = []
+  protected limits: string[] = []
 
-    protected expireOrder: number[] = []
+  protected expireOrder: number[] = []
 
-    protected expireSeries: Record<number, string[]> = {}
+  protected expireSeries = new Map<number, string[]>() // : Record<number, string[] | undefined> = {}
 
-    protected options: TProstoCacheOptions
+  protected options: TProstoCacheOptions<DataType>
 
-    protected nextTimeout: NodeJS.Timeout | undefined
+  protected nextTimeout: NodeJS.Timeout | undefined
 
-    constructor(options?: TProstoCacheOptions) {
-        this.options = {
-            limit: 1000,
-            ...options,
-        }
+  constructor(options?: Partial<TProstoCacheOptions<DataType>>) {
+    this.options = {
+      limit: 1000,
+      ...options,
     }
+  }
 
-    public set<T = DataType>(key: string, value: T) {
-        if (this.options?.limit === 0) return
-        const expires = this.options?.ttl ? Math.round(new Date().getTime() / 1) + this.options?.ttl : null
-        if (expires) {
-            this.del(key)
-        }
-        this.data[key] = {
-            value: value as unknown as DataType,
-            expires,
-        }
-        if (expires) {
-            this.pushExpires(key, expires)
-        }
-        this.pushLimit(key)
+  // eslint-disable-next-line max-params
+  public set<T = DataType>(
+    key: string,
+    value: T,
+    _ttl?: number,
+    _ttlUnits?: TProstoCacheOptions['ttlUnits']
+  ) {
+    if (this.options.limit === 0) {
+      return
     }
-
-    public get<T = DataType>(key: string): T | undefined {
-        return this.data[key]?.value as unknown as T | undefined
+    const ttlUnits = _ttlUnits ?? this.options.ttlUnits ?? 'ms'
+    const ttl = typeof _ttl === 'number' ? _ttl : this.options.ttl
+    const m = ttlUnitsChart[ttlUnits]
+    const expires = ttl ? (Math.round(Date.now() / m) + ttl) * m : null
+    if (expires) {
+      this.del(key)
     }
-
-    public del(key: string) {
-        const entry = this.data[key]
-        if (entry) {
-            delete this.data[key]
-            if (entry.expires) {
-                let es = this.expireSeries[entry.expires]
-                if (es) {
-                    es = this.expireSeries[entry.expires] = es.filter(k => k !== key)
-                }
-                if (!es || !es.length) {
-                    delete this.expireSeries[entry.expires]
-                    const { found, index } = this.searchExpireOrder(entry.expires)
-                    if (found) {
-                        this.expireOrder.splice(index, 1)
-                        if (index === 0) {
-                            console.log('calling prepareTimeout')
-                            this.prepareTimeout()
-                        }
-                    }
-                }
-            }
-        }
+    this.data.set(key, {
+      value: value as unknown as DataType,
+      expires,
+    })
+    if (expires) {
+      this.pushExpires(key, expires)
     }
-
-    public reset() {
-        this.data = {}
-        if (this.nextTimeout) {
-            clearTimeout(this.nextTimeout)
-        }
-        this.expireOrder = []
-        this.expireSeries = {}
-        this.limits = []
+    if (this.options.limit > 0) {
+      this.pushLimit(key)
     }
+  }
 
-    protected searchExpireOrder(time: number) {
-        return binarySearch(this.expireOrder, time)
+  public get<T = DataType>(key: string): T | undefined {
+    return this.data.get(key)?.value as unknown as T | undefined
+  }
+
+  public del(key: string) {
+    const entry = this.data.get(key)
+    if (entry) {
+      this.data.delete(key)
+      if (entry.expires) {
+        this.delExpireSeries(key, entry.expires)
+      }
     }
+  }
 
-    protected pushLimit(key: string) {
-        const limit = this.options?.limit
-        if (limit) {
-            const newObj = [key, ...(this.limits.filter(item => item !== key && this.data[item]))]
-            const tail = newObj.slice(limit)
-            this.limits = newObj.slice(0, limit)
-            if (tail.length) {
-                tail.forEach(tailItem => {
-                    this.del(tailItem)
-                })
-            }
-        }
-    }
-
-    protected prepareTimeout() {
-        if (this.nextTimeout) {
-            clearTimeout(this.nextTimeout)
-        }
-        const time = this.expireOrder[0]
-        const del = (time: number) => {
-            for (const key of (this.expireSeries[time] || [])) {
-                delete this.data[key]
-            }
-            delete this.expireSeries[time]
-            this.expireOrder = this.expireOrder.slice(1)
+  protected delExpireSeries(key: string, expires: number) {
+    let es = this.expireSeries.get(expires)
+    if (es) {
+      es = es.filter(k => k !== key)
+      this.expireSeries.set(expires, es)
+      if (es.length === 0) {
+        this.expireSeries.delete(expires)
+        const { found, index } = this.searchExpireOrder(expires)
+        if (found) {
+          this.expireOrder.splice(index, 1)
+          if (index === 0) {
             this.prepareTimeout()
+          }
         }
-        if (time) {
-            const delta = time - Math.round(new Date().getTime() / 1)
-            if (delta > 0) {
-                this.nextTimeout = setTimeout(() => {
-                    del(time)
-                }, delta)
-            } else {
-                del(time)
-            }
-        }
+      }
     }
+  }
 
-    protected pushExpires(key: string, time: number) {
-        const { found, index } = this.searchExpireOrder(time)
-        if (!found) {
-            this.expireOrder.splice(index, 0, time)
-        }
-        const e = this.expireSeries[time] = this.expireSeries[time] || []
-        e.push(key)
-        if (!found && index === 0) {
-            this.prepareTimeout()
-        }
+  public reset() {
+    this.data.clear()
+    if (this.nextTimeout) {
+      clearTimeout(this.nextTimeout)
     }
-}
+    this.expireOrder = []
+    this.expireSeries.clear()
+    this.limits = []
+  }
 
-interface BinaryResult {
-    found: boolean
-    index: number
-}
+  protected searchExpireOrder(time: number) {
+    return binarySearch(this.expireOrder, time)
+  }
 
-function binarySearch(a: number[], n: number): BinaryResult {
-    let start = 0
-    let end = a.length - 1
-    let mid: number = 0
-
-    while (start <= end) {
-        mid = Math.floor((start + end) / 2)
-
-        if (a[mid] === n) {
-            return {
-                found: true,
-                index: mid,
-            }
-        }
-
-        if (n < a[mid]) {
-            end = mid - 1
-            mid--
-        } else {
-            start = mid + 1
-            mid++
-        }
+  protected pushLimit(key: string) {
+    const limit = this.options.limit
+    if (limit) {
+      const newObj = [key, ...this.limits.filter(item => item !== key && this.data.get(item))]
+      const tail = newObj.slice(limit)
+      this.limits = newObj.slice(0, limit)
+      if (tail.length > 0) {
+        tail.forEach(tailItem => {
+          this.del(tailItem)
+        })
+      }
     }
-    return {
-        found: false,
-        index: mid,
+  }
+
+  protected prepareTimeout() {
+    if (this.nextTimeout) {
+      clearTimeout(this.nextTimeout)
     }
+    const time = this.expireOrder[0]
+    const del = (time: number) => {
+      for (const key of this.expireSeries.get(time) || []) {
+        if (this.options.onExpire) {
+          this.options.onExpire(key, this.data.get(key)?.value)
+        }
+        this.data.delete(key)
+      }
+      this.expireSeries.delete(time)
+      this.expireOrder = this.expireOrder.slice(1)
+      this.prepareTimeout()
+    }
+    if (time) {
+      const delta = time - Math.round(Date.now() / 1)
+      if (delta > 0) {
+        this.nextTimeout = setTimeout(() => {
+          del(time)
+        }, delta)
+      } else {
+        del(time)
+      }
+    }
+  }
+
+  protected pushExpires(key: string, time: number) {
+    const { found, index } = this.searchExpireOrder(time)
+    if (!found) {
+      this.expireOrder.splice(index, 0, time)
+    }
+    const es = this.expireSeries.get(time)
+    const e = es || []
+    if (!es) {
+      this.expireSeries.set(time, e)
+    }
+    e.push(key)
+    if (!found && index <= 0) {
+      this.prepareTimeout()
+    }
+  }
 }

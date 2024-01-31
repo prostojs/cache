@@ -7,6 +7,7 @@ Light and fast in-memory cache with TTL and limit support.
 npm: `npm install @prostojs/cache`
 
 Via CDN:
+
 ```
 <script src="https://unpkg.com/@prostojs/cache"></script>
 ```
@@ -26,9 +27,9 @@ const { ProstoCache } = require('@prostojs/cache')
 
 // constructor accepts type of cache object
 const cache = new ProstoCache<string>({
-    ttl: 1000 * 60, // time to live (by default null e.g. unlimited)
-    limit: 100,     // limit cache entries (1000 by default)
-                    // limit: 0 will prevent cache from storing values
+  ttl: 1000 * 60, // time to live (by default null e.g. unlimited)
+  limit: 100, // limit cache entries (1000 by default)
+  // limit: 0 will prevent cache from storing values
 })
 
 // set values

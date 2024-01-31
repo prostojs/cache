@@ -1,0 +1,9 @@
+ignoredRules:
+  - no-promise-executor-return
+  - '@typescript-eslint/strict-boolean-expressions'
+  - no-multi-assign
+  - unicorn/consistent-function-scoping
+  #- '@typescript-eslint/no-unnecessary-condition'
+
+relaxedRules:
+  - '@typescript-eslint/no-shadow'
