@@ -81,7 +81,7 @@ cache.reset(): void
 ## Example
 
 ```typescript
-import { ProstoCache } from 'your-prosto-cache-package-name'
+import { ProstoCache } from '@prostojs/cache'
 
 // Create a cache instance with a limit of 100 items and a default TTL of 1 hour
 const cache = new ProstoCache({ limit: 100, ttl: 1, ttlUnits: 'h' })
