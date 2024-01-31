@@ -10,6 +10,8 @@ export interface TProstoCacheOptions<T = unknown> {
 export interface TProstoCacheEntry<DataType = unknown> {
   value: DataType
   expires: number | null
+  ttl?: number
+  ttlUnits?: TProstoCacheOptions['ttlUnits']
 }
 
 const ttlUnitsChart = {
@@ -78,6 +80,8 @@ export class ProstoCache<DataType = unknown> {
     this.data.set(key, {
       value: value as unknown as DataType,
       expires,
+      ttl: _ttl,
+      ttlUnits: _ttlUnits,
     })
     if (expires) {
       this.pushExpires(key, expires)
@@ -124,7 +128,7 @@ export class ProstoCache<DataType = unknown> {
   ) {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.delExpireSeries(key, entry.expires!)
-    entry.expires = this.calcExpires(_ttl, _ttlUnits)
+    entry.expires = this.calcExpires(_ttl ?? entry.ttl, _ttlUnits ?? entry.ttlUnits)
     if (entry.expires) {
       this.pushExpires(key, entry.expires)
     }
