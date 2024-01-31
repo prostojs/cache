@@ -31,6 +31,10 @@ describe('bin-search', () => {
       found: true,
       index: 1,
     })
+    expect(binarySearch([4, 6, 8], 7)).toStrictEqual({
+      found: false,
+      index: 2,
+    })
     expect(binarySearch([4, 6, 8], 10)).toStrictEqual({
       found: false,
       index: 3,

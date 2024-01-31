@@ -28,6 +28,6 @@ export function binarySearch(a: number[], n: number): TBinaryResult {
   }
   return {
     found: false,
-    index: mid > 0 ? mid : 0,
+    index: mid > 0 ? (a[mid] < n ? mid + 1 : mid) : 0,
   }
 }

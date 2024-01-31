@@ -70,12 +70,10 @@ export class ProstoCache<DataType = unknown> {
     if (this.options.limit === 0) {
       return
     }
-    const ttlUnits = _ttlUnits ?? this.options.ttlUnits ?? 'ms'
-    const ttl = typeof _ttl === 'number' ? _ttl : this.options.ttl
-    const m = ttlUnitsChart[ttlUnits]
-    const expires = ttl ? (Math.round(Date.now() / m) + ttl) * m : null
-    if (expires) {
-      this.del(key)
+    const expires = this.calcExpires(_ttl, _ttlUnits)
+    const entry = this.data.get(key)
+    if (expires && entry?.expires) {
+      this.delExpireSeries(key, entry.expires)
     }
     this.data.set(key, {
       value: value as unknown as DataType,
@@ -89,6 +87,13 @@ export class ProstoCache<DataType = unknown> {
     }
   }
 
+  private calcExpires(_ttl?: number, _ttlUnits?: TProstoCacheOptions['ttlUnits']) {
+    const ttlUnits = _ttlUnits ?? this.options.ttlUnits ?? 'ms'
+    const ttl = typeof _ttl === 'number' ? _ttl : this.options.ttl
+    const m = ttlUnitsChart[ttlUnits]
+    return ttl ? (Math.round(Date.now() / m) + ttl) * m : null
+  }
+
   /**
    * Retrieves a value from the cache.
    *
@@ -96,8 +101,34 @@ export class ProstoCache<DataType = unknown> {
    * // Retrieve a value from the cache
    * const value = cache.get('myKey');
    */
-  public get<T = DataType>(key: string): T | undefined {
-    return this.data.get(key)?.value as unknown as T | undefined
+  // eslint-disable-next-line max-params
+  public get<T = DataType>(
+    key: string,
+    extendTtl?: boolean,
+    _ttl?: number,
+    _ttlUnits?: TProstoCacheOptions['ttlUnits']
+  ): T | undefined {
+    const entry = this.data.get(key)
+    if (extendTtl && entry?.expires) {
+      this.replaceExpireSeriesForEntry(key, entry, _ttl, _ttlUnits)
+    }
+    return entry?.value as T
+  }
+
+  // eslint-disable-next-line max-params
+  private replaceExpireSeriesForEntry(
+    key: string,
+    entry: TProstoCacheEntry<DataType>,
+    _ttl?: number,
+    _ttlUnits?: TProstoCacheOptions['ttlUnits']
+  ) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    this.delExpireSeries(key, entry.expires!)
+    entry.expires = this.calcExpires(_ttl, _ttlUnits)
+    if (entry.expires) {
+      console.log(key, entry.expires)
+      this.pushExpires(key, entry.expires)
+    }
   }
 
   /**
@@ -120,6 +151,7 @@ export class ProstoCache<DataType = unknown> {
   protected delExpireSeries(key: string, expires: number) {
     let es = this.expireSeries.get(expires)
     if (es) {
+      console.log(es, key)
       es = es.filter(k => k !== key)
       this.expireSeries.set(expires, es)
       if (es.length === 0) {
@@ -176,7 +208,8 @@ export class ProstoCache<DataType = unknown> {
     }
     const time = this.expireOrder[0]
     const del = (time: number) => {
-      for (const key of this.expireSeries.get(time) || []) {
+      const series = this.expireSeries.get(time) || []
+      for (const key of series) {
         if (this.options.onExpire) {
           this.options.onExpire(key, this.data.get(key)?.value)
         }
@@ -187,13 +220,14 @@ export class ProstoCache<DataType = unknown> {
       this.prepareTimeout()
     }
     if (time) {
-      const delta = time - Math.round(Date.now() / 1)
+      const delta = time - Date.now()
       if (delta > 0) {
         this.nextTimeout = setTimeout(() => {
           del(time)
         }, delta)
       } else {
         del(time)
+        this.prepareTimeout()
       }
     }
   }
