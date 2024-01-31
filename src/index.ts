@@ -126,7 +126,6 @@ export class ProstoCache<DataType = unknown> {
     this.delExpireSeries(key, entry.expires!)
     entry.expires = this.calcExpires(_ttl, _ttlUnits)
     if (entry.expires) {
-      console.log(key, entry.expires)
       this.pushExpires(key, entry.expires)
     }
   }
@@ -151,7 +150,6 @@ export class ProstoCache<DataType = unknown> {
   protected delExpireSeries(key: string, expires: number) {
     let es = this.expireSeries.get(expires)
     if (es) {
-      console.log(es, key)
       es = es.filter(k => k !== key)
       this.expireSeries.set(expires, es)
       if (es.length === 0) {
