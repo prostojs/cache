@@ -1,3 +1,12 @@
+## [0.1.3](https://github.com/prostojs/cache/compare/v0.1.2...v0.1.3) (2024-01-31)
+
+
+### Features
+
+* add extending ttl option for get method ([345c658](https://github.com/prostojs/cache/commit/345c658db6e5695c47521386ca80de4246e98a74))
+
+
+
 ## [0.1.2](https://github.com/prostojs/cache/compare/v0.1.1...v0.1.2) (2024-01-31)
 
 
