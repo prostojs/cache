@@ -1,3 +1,12 @@
+## [0.1.4](https://github.com/prostojs/cache/compare/v0.1.3...v0.1.4) (2024-01-31)
+
+
+### Bug Fixes
+
+* remove console ([629d76b](https://github.com/prostojs/cache/commit/629d76b3b96eb45ecee534c3918eb529b6454d8b))
+
+
+
 ## [0.1.3](https://github.com/prostojs/cache/compare/v0.1.2...v0.1.3) (2024-01-31)
 
 
