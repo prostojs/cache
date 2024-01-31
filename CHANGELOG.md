@@ -1,3 +1,12 @@
+## [0.1.5](https://github.com/prostojs/cache/compare/v0.1.4...v0.1.5) (2024-01-31)
+
+
+### Features
+
+* remember ttl for extending ([b5ca58d](https://github.com/prostojs/cache/commit/b5ca58da82783a86d336fb0bc596cb1abc6e8273))
+
+
+
 ## [0.1.4](https://github.com/prostojs/cache/compare/v0.1.3...v0.1.4) (2024-01-31)
 
 

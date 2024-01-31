@@ -1,6 +1,6 @@
 {
   "name": "@prostojs/cache",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Light andfast in-memory cache",
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
