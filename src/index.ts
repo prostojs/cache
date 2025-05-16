@@ -73,17 +73,12 @@ export class ProstoCache<DataType = unknown> {
 
     const expires = this.calcExpires(_ttl, _ttlUnits)
 
-    // ----- LRU (two ops) -----
-    if (this.data.has(key)) {
-      this.data.delete(key)
-    } // remove the old record
     this.data.set(key, {
       value: value as unknown as DataType,
       expires,
       ttl: _ttl,
       ttlUnits: _ttlUnits,
     })
-    // --------------------------------
 
     // hard-limit eviction
     if (this.data.size > this.options.limit) {
@@ -122,6 +117,9 @@ export class ProstoCache<DataType = unknown> {
     const entry = this.data.get(key)
     if (extendTtl && entry?.expires) {
       this.replaceExpireSeriesForEntry(key, entry, _ttl, _ttlUnits)
+    }
+    if (entry) {
+      this.data.set(key, entry)
     }
     return entry?.value as T
   }
@@ -219,6 +217,7 @@ export class ProstoCache<DataType = unknown> {
         this.nextTimeout = setTimeout(() => {
           del(time)
         }, delta)
+        this.nextTimeout.unref()
       } else {
         del(time)
         this.prepareTimeout()
