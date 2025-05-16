@@ -34,8 +34,6 @@ const ttlUnitsChart = {
 export class ProstoCache<DataType = unknown> {
   protected data = new Map<string, TProstoCacheEntry<DataType>>() // : Record<string, TProstoCacheEntry<DataType> | undefined> = {}
 
-  protected limits: string[] = []
-
   protected expireOrder: number[] = []
 
   protected expireSeries = new Map<number, string[]>() // : Record<number, string[] | undefined> = {}
@@ -72,30 +70,39 @@ export class ProstoCache<DataType = unknown> {
     if (this.options.limit === 0) {
       return
     }
+
     const expires = this.calcExpires(_ttl, _ttlUnits)
-    const entry = this.data.get(key)
-    if (expires && entry?.expires) {
-      this.delExpireSeries(key, entry.expires)
-    }
+
+    // ----- LRU (two ops) -----
+    if (this.data.has(key)) {
+      this.data.delete(key)
+    } // remove the old record
     this.data.set(key, {
       value: value as unknown as DataType,
       expires,
       ttl: _ttl,
       ttlUnits: _ttlUnits,
     })
+    // --------------------------------
+
+    // hard-limit eviction
+    if (this.data.size > this.options.limit) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const oldestKey = this.data.keys().next().value!
+      this.del(oldestKey)
+    }
+
     if (expires) {
       this.pushExpires(key, expires)
-    }
-    if (this.options.limit > 0) {
-      this.pushLimit(key)
     }
   }
 
   private calcExpires(_ttl?: number, _ttlUnits?: TProstoCacheOptions['ttlUnits']) {
     const ttlUnits = _ttlUnits ?? this.options.ttlUnits ?? 'ms'
     const ttl = typeof _ttl === 'number' ? _ttl : this.options.ttl
+
     const m = ttlUnitsChart[ttlUnits]
-    return ttl ? (Math.round(Date.now() / m) + ttl) * m : null
+    return ttl ? Date.now() + ttl * m : null
   }
 
   /**
@@ -183,25 +190,10 @@ export class ProstoCache<DataType = unknown> {
     }
     this.expireOrder = []
     this.expireSeries.clear()
-    this.limits = []
   }
 
   protected searchExpireOrder(time: number) {
     return binarySearch(this.expireOrder, time)
-  }
-
-  protected pushLimit(key: string) {
-    const limit = this.options.limit
-    if (limit) {
-      const newObj = [key, ...this.limits.filter(item => item !== key && this.data.get(item))]
-      const tail = newObj.slice(limit)
-      this.limits = newObj.slice(0, limit)
-      if (tail.length > 0) {
-        tail.forEach(tailItem => {
-          this.del(tailItem)
-        })
-      }
-    }
   }
 
   protected prepareTimeout() {
