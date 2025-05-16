@@ -1,3 +1,12 @@
+## [0.1.7](https://github.com/prostojs/cache/compare/v0.1.6...v0.1.7) (2025-05-16)
+
+
+### Performance Improvements
+
+* optimize LRU logic ([1fe4c40](https://github.com/prostojs/cache/commit/1fe4c406d88d8ff5734d611678274b2c4992ad9a))
+
+
+
 ## [0.1.6](https://github.com/prostojs/cache/compare/v0.1.5...v0.1.6) (2025-05-16)
 
 
