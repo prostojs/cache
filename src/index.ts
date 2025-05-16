@@ -73,6 +73,9 @@ export class ProstoCache<DataType = unknown> {
 
     const expires = this.calcExpires(_ttl, _ttlUnits)
 
+    if (this.data.has(key)) {
+      this.data.delete(key) // for LRU
+    }
     this.data.set(key, {
       value: value as unknown as DataType,
       expires,
@@ -119,6 +122,7 @@ export class ProstoCache<DataType = unknown> {
       this.replaceExpireSeriesForEntry(key, entry, _ttl, _ttlUnits)
     }
     if (entry) {
+      this.data.delete(key) // for LRU
       this.data.set(key, entry)
     }
     return entry?.value as T
