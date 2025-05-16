@@ -1,3 +1,12 @@
+## [0.1.6](https://github.com/prostojs/cache/compare/v0.1.5...v0.1.6) (2025-05-16)
+
+
+### Performance Improvements
+
+* optimize write perf ([d52172e](https://github.com/prostojs/cache/commit/d52172e7495795d9c2b2ae80ec21fe8e0068661a))
+
+
+
 ## [0.1.5](https://github.com/prostojs/cache/compare/v0.1.4...v0.1.5) (2024-01-31)
 
 
