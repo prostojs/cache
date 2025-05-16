@@ -1,3 +1,12 @@
+## [0.1.8](https://github.com/prostojs/cache/compare/v0.1.7...v0.1.8) (2025-05-16)
+
+
+### Bug Fixes
+
+* fix LRU logic ([41a014f](https://github.com/prostojs/cache/commit/41a014f7117e03fd13cd37e20c443f12bba7e481))
+
+
+
 ## [0.1.7](https://github.com/prostojs/cache/compare/v0.1.6...v0.1.7) (2025-05-16)
 
 
