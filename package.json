@@ -52,7 +52,7 @@
   },
   "homepage": "https://github.com/prostojs/cache#readme",
   "devDependencies": {
-    "@prostojs/dye": "^0.3.0",
+    "@prostojs/dye": "^0.5.0",
     "@rollup/plugin-commonjs": "^25.0.7",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-replace": "^5.0.5",
