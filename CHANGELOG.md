@@ -1,3 +1,12 @@
+## [0.1.9](https://github.com/prostojs/cache/compare/v0.1.8...v0.1.9) (2026-10-10)
+
+
+### Performance Improvements
+
+* O(1) LRU without Map churn on hits; fix: re-entrant/throwing onExpire, overdue ordering, long TTLs ([f6616e6](https://github.com/prostojs/cache/commit/f6616e61bcc5aa09505845f4ec1cdcb478547e5d))
+
+
+
 ## [0.1.8](https://github.com/prostojs/cache/compare/v0.1.7...v0.1.8) (2025-05-16)
 
 
